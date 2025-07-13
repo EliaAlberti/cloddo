@@ -37,7 +37,11 @@
       "Bash(DISPLAY=:99 import -window root /tmp/cloddo_app_screenshot.png)",
       "Bash(export DISPLAY=:99.0)",
       "Bash(claude mcp:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)",
+      "Bash(npm install:*)",
+      "Bash(npm search:*)"
     ],
     "deny": []
   }
