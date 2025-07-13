@@ -41,7 +41,14 @@
       "Bash(git commit:*)",
       "Bash(git config:*)",
       "Bash(npm install:*)",
-      "Bash(npm search:*)"
+      "Bash(npm search:*)",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(tar:*)",
+      "Bash(ssh-keygen:*)",
+      "Bash(cat:*)",
+      "Bash(ssh:*)"
     ],
     "deny": []
   }
