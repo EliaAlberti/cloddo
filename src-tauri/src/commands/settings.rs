@@ -56,15 +56,24 @@ pub async fn update_settings(
 
 #[tauri::command]
 pub async fn validate_api_key(api_key: String) -> Result<bool, String> {
+    log::info!("🔑 validate_api_key called with key length: {}", api_key.len());
+    log::info!("🔑 Key starts with: {}", if api_key.len() >= 15 { &api_key[..15] } else { &api_key });
+    
     if api_key.is_empty() {
+        log::error!("❌ API key is empty");
         return Ok(false);
     }
     
     let client = AnthropicClient::new(api_key, None);
+    log::info!("🔑 Created AnthropicClient, calling validate_api_key...");
+    
     match client.validate_api_key().await {
-        Ok(is_valid) => Ok(is_valid),
+        Ok(is_valid) => {
+            log::info!("✅ API key validation result: {}", is_valid);
+            Ok(is_valid)
+        },
         Err(e) => {
-            log::error!("API key validation error: {}", e);
+            log::error!("❌ API key validation error: {}", e);
             Ok(false)
         }
     }
