@@ -48,7 +48,8 @@
       "Bash(tar:*)",
       "Bash(ssh-keygen:*)",
       "Bash(cat:*)",
-      "Bash(ssh:*)"
+      "Bash(ssh:*)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }
