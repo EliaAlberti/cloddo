@@ -106,14 +106,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         },
       };
 
-      // Only update the API key if it's been entered and we're using API key auth
-      if (authMethod === 'api_key' && apiKey.trim()) {
+      // Always save the API key if it's been entered (regardless of auth method)
+      if (apiKey.trim()) {
         apiSettings.anthropicApiKey = apiKey.trim();
+        console.log('Saving API key, length:', apiKey.trim().length);
       }
 
-      // Only update OAuth token if we're using OAuth auth
-      if (authMethod === 'oauth' && oauthToken.trim()) {
+      // Always save OAuth token if it's been entered
+      if (oauthToken.trim()) {
         apiSettings.anthropicOAuthToken = oauthToken.trim();
+        console.log('Saving OAuth token');
       }
 
       console.log('Saving API settings:', { 

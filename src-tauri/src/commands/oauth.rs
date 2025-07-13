@@ -38,13 +38,12 @@ pub async fn initiate_oauth_flow() -> Result<String, String> {
     // In a real app, this should be stored securely
     log::info!("Generated PKCE code_verifier (first 20 chars): {}", &code_verifier[..20]);
     
-    // Build proper OAuth URL with PKCE parameters and required scope
+    // Build proper OAuth URL with PKCE parameters (try without scope first)
     let oauth_url = format!(
-        "{}?response_type=code&client_id={}&redirect_uri={}&scope={}&state={}&code_challenge={}&code_challenge_method=S256",
+        "{}?response_type=code&client_id={}&redirect_uri={}&state={}&code_challenge={}&code_challenge_method=S256",
         ANTHROPIC_AUTH_URL,
         urlencoding::encode(client_id),
         urlencoding::encode(REDIRECT_URI),
-        urlencoding::encode("org:create_api_key"),  // Required scope for Claude Code access
         urlencoding::encode(&state),
         urlencoding::encode(&code_challenge)
     );
