@@ -218,11 +218,17 @@ pub async fn send_claude_message(request: CreateMessageRequest) -> Result<Messag
     };
     
     // Send message to Claude API
+    log::info!("🚀 Sending message to Claude API...");
     match client.send_message(anthropic_request).await {
         Ok(response) => {
+            log::info!("✅ Received response from Claude API: {} input tokens, {} output tokens", 
+                response.usage.input_tokens, response.usage.output_tokens);
+            
             let content = response.content.first()
                 .map(|block| block.text.clone())
                 .unwrap_or_else(|| "No response content".to_string());
+            
+            log::info!("📝 Response content length: {}", content.len());
             
             let assistant_message = Message {
                 id: format!("msg_{}", Utc::now().timestamp()),

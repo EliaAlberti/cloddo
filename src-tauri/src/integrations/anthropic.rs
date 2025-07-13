@@ -77,18 +77,25 @@ impl AnthropicClient {
     }
 
     pub async fn validate_api_key(&self) -> Result<bool> {
+        log::info!("🔍 Validating API key: length={}, starts_with={}", 
+            self.api_key.len(), 
+            if self.api_key.len() >= 15 { &self.api_key[..15] } else { &self.api_key }
+        );
+
         // First check basic format - Anthropic API keys start with 'sk-ant-api03-' or 'sk-ant-api04-'
         if !self.api_key.starts_with("sk-ant-api03-") && !self.api_key.starts_with("sk-ant-api04-") {
-            log::error!("Invalid API key format: must start with 'sk-ant-api03-' or 'sk-ant-api04-'. Current format: {}...", 
+            log::error!("❌ Invalid API key format: must start with 'sk-ant-api03-' or 'sk-ant-api04-'. Current format: {}...", 
                 if self.api_key.len() >= 15 { &self.api_key[..15] } else { &self.api_key });
             return Ok(false);
         }
 
         // Check minimum length (Anthropic keys are typically ~95+ characters)
         if self.api_key.len() < 90 {
-            log::error!("Invalid API key format: too short (length: {}, expected ~95+)", self.api_key.len());
+            log::error!("❌ Invalid API key format: too short (length: {}, expected ~95+)", self.api_key.len());
             return Ok(false);
         }
+
+        log::info!("✅ API key format validation passed, testing with API call...");
 
         // Test with actual API call using a minimal request
         let test_request = AnthropicRequest {

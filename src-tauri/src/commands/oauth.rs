@@ -44,7 +44,7 @@ pub async fn initiate_oauth_flow() -> Result<String, String> {
         ANTHROPIC_AUTH_URL,
         urlencoding::encode(client_id),
         urlencoding::encode(REDIRECT_URI),
-        urlencoding::encode("read"),  // Basic read scope
+        urlencoding::encode("api"),  // API access scope
         urlencoding::encode(&state),
         urlencoding::encode(&code_challenge)
     );
