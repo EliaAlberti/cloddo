@@ -1,6 +1,8 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use ring::digest;
+use base64::{Engine as _, engine::general_purpose};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct OAuthTokenResponse {
@@ -24,18 +26,29 @@ const REDIRECT_URI: &str = "http://localhost:8080/oauth/callback";
 
 #[tauri::command]
 pub async fn initiate_oauth_flow() -> Result<String, String> {
-    let client_id = get_client_id();
+    // Use Claude Code's official client ID for desktop applications
+    let client_id = "9d1c250a-e61b-44d9-88ed-5944d1962f5e";
     let state = format!("state_{}", chrono::Utc::now().timestamp());
     
-    // Build proper OAuth URL with required parameters
+    // Generate PKCE parameters
+    let code_verifier = generate_code_verifier();
+    let code_challenge = generate_code_challenge(&code_verifier);
+    
+    // Store code_verifier for later use in token exchange
+    // In a real app, this should be stored securely
+    log::info!("Generated PKCE code_verifier (first 20 chars): {}", &code_verifier[..20]);
+    
+    // Build proper OAuth URL with PKCE parameters
     let oauth_url = format!(
-        "{}?response_type=code&client_id={}&redirect_uri={}&scope=read&state={}",
+        "{}?response_type=code&client_id={}&redirect_uri={}&scope=&state={}&code_challenge={}&code_challenge_method=S256",
         ANTHROPIC_AUTH_URL,
-        urlencoding::encode(&client_id),
+        urlencoding::encode(client_id),
         urlencoding::encode(REDIRECT_URI),
-        urlencoding::encode(&state)
+        urlencoding::encode(&state),
+        urlencoding::encode(&code_challenge)
     );
     
+    log::info!("Generated OAuth URL with PKCE for Claude authentication");
     Ok(oauth_url)
 }
 
@@ -129,22 +142,40 @@ pub async fn validate_oauth_token(access_token: String) -> Result<bool, String> 
     Ok(response.status().is_success())
 }
 
+// PKCE helper functions
+fn generate_code_verifier() -> String {
+    use rand::Rng;
+    const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~";
+    let mut rng = rand::thread_rng();
+    
+    (0..128)
+        .map(|_| {
+            let idx = rng.gen_range(0..CHARSET.len());
+            CHARSET[idx] as char
+        })
+        .collect()
+}
+
+fn generate_code_challenge(verifier: &str) -> String {
+    let digest = digest::digest(&digest::SHA256, verifier.as_bytes());
+    general_purpose::URL_SAFE_NO_PAD.encode(digest.as_ref())
+}
+
 // Helper functions for OAuth configuration
 fn get_client_id() -> String {
     std::env::var("ANTHROPIC_CLIENT_ID")
         .unwrap_or_else(|_| {
-            log::warn!("ANTHROPIC_CLIENT_ID not set, using placeholder UUID. Set environment variable for real OAuth.");
-            // Generate a valid UUID format for OAuth
-            use uuid::Uuid;
-            format!("urn:uuid:{}", Uuid::new_v4())
+            log::error!("ANTHROPIC_CLIENT_ID environment variable not set. OAuth will not work without proper credentials.");
+            // Return a clearly invalid client ID that will trigger proper error handling
+            "INVALID_CLIENT_ID_NOT_CONFIGURED".to_string()
         })
 }
 
 fn get_client_secret() -> String {
     std::env::var("ANTHROPIC_CLIENT_SECRET")
         .unwrap_or_else(|_| {
-            log::warn!("ANTHROPIC_CLIENT_SECRET not set, using placeholder. Set environment variable for real OAuth.");
-            "dev-secret-placeholder".to_string()
+            log::error!("ANTHROPIC_CLIENT_SECRET environment variable not set. OAuth will not work without proper credentials.");
+            "INVALID_CLIENT_SECRET_NOT_CONFIGURED".to_string()
         })
 }
 

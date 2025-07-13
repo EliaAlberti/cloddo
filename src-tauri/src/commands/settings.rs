@@ -69,3 +69,10 @@ pub async fn validate_api_key(api_key: String) -> Result<bool, String> {
         }
     }
 }
+
+#[tauri::command]
+pub async fn debug_settings() -> Result<String, String> {
+    let settings = get_settings().await?;
+    log::info!("Debug settings called, found: {:?}", settings);
+    Ok(format!("Settings: {:?}", settings))
+}
