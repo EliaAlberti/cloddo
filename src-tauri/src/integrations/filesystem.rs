@@ -1,0 +1,1 @@
+// Filesystem operations integration - placeholder for Phase 3

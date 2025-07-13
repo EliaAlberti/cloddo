@@ -1,0 +1,63 @@
+[package]
+name = "cloddo"
+version = "1.0.0"
+description = "Cloddo - Claude Desktop Alternative"
+authors = ["Cloddo Team"]
+license = "MIT"
+repository = "https://github.com/cloddo/cloddo"
+edition = "2021"
+rust-version = "1.77.2"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.3.0", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+log = "0.4"
+tauri = { version = "2.6.2", features = [] }
+tauri-plugin-log = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-shell = "2"
+tauri-plugin-store = "2"
+
+# Database dependencies
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "sqlite", "uuid", "chrono", "json"] }
+tokio = { version = "1.0", features = ["full"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+# HTTP client for Anthropic API
+reqwest = { version = "0.12", features = ["json", "stream"] }
+
+# Async utilities
+futures = "0.3"
+async-trait = "0.1"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Configuration
+config = "0.14"
+dirs = "5.0"
+
+# Encryption for secure storage
+ring = "0.17"
+base64 = "0.22"
+
+# Job scheduling for agents
+cron = "0.12"
+tokio-cron-scheduler = "0.11"
+
+# Utilities
+once_cell = "1.19"
+urlencoding = "2.1"
+env_logger = "0.11.8"

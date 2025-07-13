@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloddo - Project Architecture Diagram</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 3em;
+            font-weight: 300;
+        }
+        
+        .header p {
+            margin: 10px 0 0 0;
+            opacity: 0.8;
+            font-size: 1.2em;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .phase-status {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+        
+        .phase-card {
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            border-left: 5px solid;
+        }
+        
+        .phase-completed {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border-left-color: #28a745;
+        }
+        
+        .phase-current {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-left-color: #ffc107;
+        }
+        
+        .phase-pending {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-left-color: #6c757d;
+        }
+        
+        .architecture-section {
+            margin: 40px 0;
+        }
+        
+        .architecture-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+        
+        .layer {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            border: 2px solid #dee2e6;
+            position: relative;
+        }
+        
+        .layer-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        
+        .component {
+            background: white;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #3498db;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .component-name {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .component-status {
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        
+        .status-completed { color: #28a745; }
+        .status-current { color: #ffc107; }
+        .status-pending { color: #6c757d; }
+        
+        .connection-arrow {
+            position: absolute;
+            right: -15px;
+            top: 50%;
+            font-size: 2em;
+            color: #3498db;
+            transform: translateY(-50%);
+        }
+        
+        .data-flow {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 30px 0;
+        }
+        
+        .tech-item {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+            border-top: 3px solid #3498db;
+        }
+        
+        .progress-bar {
+            background: #e9ecef;
+            border-radius: 25px;
+            height: 30px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+            height: 100%;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            transition: width 0.3s ease;
+        }
+        
+        .next-steps {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px 0;
+            border-left: 5px solid #17a2b8;
+        }
+        
+        .section-title {
+            font-size: 2em;
+            color: #2c3e50;
+            margin: 30px 0 20px 0;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔥 CLODDO</h1>
+            <p>Claude Desktop Alternative - Project Architecture & Progress</p>
+        </div>
+        
+        <div class="content">
+            <!-- Project Progress -->
+            <h2 class="section-title">📊 Project Phases Overview</h2>
+            <div class="phase-status">
+                <div class="phase-card phase-completed">
+                    <h3>✅ Phase 1: Foundation</h3>
+                    <p><strong>Status:</strong> Completed</p>
+                    <ul>
+                        <li>Project setup & dependencies</li>
+                        <li>TypeScript configuration</li>
+                        <li>Tailwind CSS setup</li>
+                        <li>Basic project structure</li>
+                    </ul>
+                </div>
+                <div class="phase-card phase-current">
+                    <h3>🚧 Phase 2: Core Implementation</h3>
+                    <p><strong>Status:</strong> 87% Complete</p>
+                    <ul>
+                        <li>✅ Rust backend infrastructure</li>
+                        <li>✅ Database schema & models</li>
+                        <li>✅ State management (Zustand)</li>
+                        <li>✅ Layout components</li>
+                        <li>✅ "Hooks" → "Workflows" naming update</li>
+                        <li>🔄 Chat functionality (in progress)</li>
+                    </ul>
+                </div>
+                <div class="phase-card phase-pending">
+                    <h3>⏳ Phase 3: Advanced Features</h3>
+                    <p><strong>Status:</strong> Pending</p>
+                    <ul>
+                        <li>Agent management system</li>
+                        <li>Workflow automation</li>
+                        <li>Settings & customization</li>
+                        <li>Export/Import functionality</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Overall Progress -->
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: 77%;">77% Complete</div>
+            </div>
+            
+            <!-- Architecture Overview -->
+            <h2 class="section-title">🏗️ Technical Architecture</h2>
+            <div class="architecture-grid">
+                <div class="layer">
+                    <div class="layer-title">🖥️ Frontend (React + TypeScript)</div>
+                    <div class="component">
+                        <div class="component-name">Layout Components</div>
+                        <div class="component-status status-completed">✅ Header, Sidebar, MainContent, StatusBar</div>
+                    </div>
+                    <div class="component">
+                        <div class="component-name">State Management</div>
+                        <div class="component-status status-completed">✅ Zustand stores (chat, settings, agent, hook)</div>
+                    </div>
+                    <div class="component">
+                        <div class="component-name">UI Components</div>
+                        <div class="component-status status-completed">✅ Button, Input, shadcn/ui foundation</div>
+                    </div>
+                    <div class="component">
+                        <div class="component-name">Chat Interface</div>
+                        <div class="component-status status-current">🔄 Message rendering & input</div>
+                    </div>
+                    <div class="connection-arrow">→</div>
+                </div>
+                
+                <div class="layer">
+                    <div class="layer-title">⚙️ Backend (Rust + Tauri)</div>
+                    <div class="component">
+                        <div class="component-name">Database Layer</div>
+                        <div class="component-status status-completed">✅ SQLite + sqlx, migrations</div>
+                    </div>
+                    <div class="component">
+                        <div class="component-name">Tauri Commands</div>
+                        <div class="component-status status-completed">✅ CRUD operations for all entities</div>
+                    </div>
+                    <div class="component">
+                        <div class="component-name">API Integration</div>
+                        <div class="component-status status-completed">✅ Anthropic Claude API setup</div>
+                    </div>
+                    <div class="component">
+                        <div class="component-name">Security & Auth</div>
+                        <div class="component-status status-completed">✅ API key management, encryption</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Data Flow -->
+            <div class="data-flow">
+                <h3>🔄 Data Flow Architecture</h3>
+                <p><strong>User Interaction</strong> → <strong>React Components</strong> → <strong>Zustand State</strong> → <strong>Tauri Commands</strong> → <strong>Rust Backend</strong> → <strong>SQLite Database</strong></p>
+                <p><strong>External API</strong> ← <strong>Anthropic Claude API</strong> ← <strong>HTTP Client</strong> ← <strong>Backend Services</strong></p>
+            </div>
+            
+            <!-- Technology Stack -->
+            <h2 class="section-title">🛠️ Technology Stack</h2>
+            <div class="tech-stack">
+                <div class="tech-item">
+                    <strong>Frontend</strong><br>
+                    React 19, TypeScript, Tailwind CSS
+                </div>
+                <div class="tech-item">
+                    <strong>Desktop Framework</strong><br>
+                    Tauri 2.0
+                </div>
+                <div class="tech-item">
+                    <strong>Backend</strong><br>
+                    Rust, tokio, sqlx
+                </div>
+                <div class="tech-item">
+                    <strong>Database</strong><br>
+                    SQLite
+                </div>
+                <div class="tech-item">
+                    <strong>State Management</strong><br>
+                    Zustand, React Query
+                </div>
+                <div class="tech-item">
+                    <strong>UI Library</strong><br>
+                    shadcn/ui, Radix UI
+                </div>
+                <div class="tech-item">
+                    <strong>Build Tools</strong><br>
+                    Vite, ESLint, PostCSS
+                </div>
+                <div class="tech-item">
+                    <strong>API</strong><br>
+                    Anthropic Claude API
+                </div>
+            </div>
+            
+            <!-- Current Testing Setup -->
+            <h2 class="section-title">🧪 Testing & Development</h2>
+            <div class="data-flow">
+                <h3>Current Testing Method</h3>
+                <ol>
+                    <li><strong>Local Development:</strong> <code>npm run dev</code> (Vite server on localhost:5173)</li>
+                    <li><strong>Tunnel Creation:</strong> <code>./cloudflared tunnel --url http://localhost:5173</code></li>
+                    <li><strong>External Access:</strong> Cloudflare tunnel provides public URL for browser testing</li>
+                    <li><strong>Configuration:</strong> Vite allowedHosts configured for *.trycloudflare.com</li>
+                </ol>
+                <p><strong>Current Tunnel:</strong> <a href="https://missing-diesel-maker-coast.trycloudflare.com" target="_blank">https://missing-diesel-maker-coast.trycloudflare.com</a></p>
+            </div>
+            
+            <!-- Next Steps -->
+            <div class="next-steps">
+                <h3>🎯 Immediate Next Steps (Phase 2 Completion)</h3>
+                <ol>
+                    <li><strong>Chat Functionality:</strong> Implement message sending/receiving with Claude API</li>
+                    <li><strong>Message Persistence:</strong> Connect chat UI to backend database</li>
+                    <li><strong>Real-time Updates:</strong> Add WebSocket or polling for live chat updates</li>
+                    <li><strong>Error Handling:</strong> Comprehensive error states and user feedback</li>
+                    <li><strong>Settings Panel:</strong> Replace placeholder with functional settings</li>
+                </ol>
+                
+                <h3>🔮 Phase 3 Preview</h3>
+                <ul>
+                    <li>Agent creation and management interface</li>
+                    <li>Workflow automation system</li>
+                    <li>Project organization features</li>
+                    <li>Export/import capabilities</li>
+                    <li>Advanced customization options</li>
+                </ul>
+            </div>
+            
+            <!-- Key Learnings -->
+            <h2 class="section-title">💡 Key Technical Learnings</h2>
+            <div class="architecture-grid">
+                <div class="layer">
+                    <div class="layer-title">🔧 Development Insights</div>
+                    <div class="component">
+                        <div class="component-name">Tauri 2.0 Setup</div>
+                        <div class="component-status">Requires specific dependency versions and plugin configuration</div>
+                    </div>
+                    <div class="component">
+                        <div class="component-name">TypeScript Strict Mode</div>
+                        <div class="component-status">Type-only imports required with verbatimModuleSyntax</div>
+                    </div>
+                    <div class="component">
+                        <div class="component-name">Vite + Tunneling</div>
+                        <div class="component-status">allowedHosts configuration essential for external access</div>
+                    </div>
+                </div>
+                
+                <div class="layer">
+                    <div class="layer-title">🚀 Performance & Architecture</div>
+                    <div class="component">
+                        <div class="component-name">State Management</div>
+                        <div class="component-status">Zustand provides excellent TypeScript integration</div>
+                    </div>
+                    <div class="component">
+                        <div class="component-name">Database Design</div>
+                        <div class="component-status">SQLite perfect for desktop app with proper indexing</div>
+                    </div>
+                    <div class="component">
+                        <div class="component-name">Rust Backend</div>
+                        <div class="component-status">Async architecture scales well for concurrent operations</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
