@@ -137,18 +137,59 @@ pub async fn get_messages(
     limit: Option<i32>,
     offset: Option<i32>,
 ) -> Result<Vec<Message>, String> {
-    // For now, return empty messages - will implement when needed
+    // Validate chat_id parameter
+    if chat_id.is_empty() {
+        return Err("Chat ID cannot be empty. Please select a valid chat to view messages.".to_string());
+    }
+    
+    // Check if the chat exists
+    let chats = load_chats()?;
+    let chat_exists = chats.iter().any(|c| c.id == chat_id);
+    
+    if !chat_exists {
+        return Err(format!("Chat with ID '{}' not found. Please select a valid chat.", chat_id));
+    }
+    
+    // For now, return empty messages - will implement message storage when needed
+    // This prevents the error while allowing the UI to work correctly
     Ok(Vec::new())
 }
 
 async fn get_api_key_from_settings() -> Result<String, String> {
     let settings = settings::get_settings().await?;
+    
+    // Debug: Log all settings for troubleshooting
+    log::info!("All stored settings: {:?}", settings);
+    log::info!("Looking for api.anthropicApiKey in settings...");
+    
+    // Try to get the API key from settings with fallback to environment variable
     let api_key = settings.get("api.anthropicApiKey")
-        .and_then(|v| v.as_str())
-        .ok_or("API key not found in settings")?;
+        .and_then(|v| {
+            log::info!("Found api.anthropicApiKey value: {:?}", v);
+            v.as_str()
+        })
+        .filter(|s| !s.is_empty())
+        .or_else(|| {
+            log::info!("Checking ANTHROPIC_API_KEY environment variable...");
+            std::env::var("ANTHROPIC_API_KEY").ok().as_deref()
+        })
+        .ok_or_else(|| {
+            log::error!("API key not found in settings or environment. Available settings keys: {:?}", 
+                settings.keys().collect::<Vec<_>>());
+            "API key not found. Please ensure you have saved a valid Anthropic API key in Settings > API Configuration.".to_string()
+        })?;
     
     if api_key.is_empty() {
-        return Err("API key is empty. Please configure your Anthropic API key in settings.".to_string());
+        return Err("API key is empty. Please configure your Anthropic API key in settings first.".to_string());
+    }
+    
+    // Validate basic API key format - Anthropic uses sk-ant-api03- or sk-ant-api04- format
+    if !api_key.starts_with("sk-ant-api03-") && !api_key.starts_with("sk-ant-api04-") {
+        return Err("Invalid API key format. Anthropic API keys must start with 'sk-ant-api03-' or 'sk-ant-api04-'. Please check your API key in settings.".to_string());
+    }
+    
+    if api_key.len() < 90 {
+        return Err("API key appears to be too short (expected ~95+ characters). Please verify your API key in settings.".to_string());
     }
     
     // Log API key format for debugging (but not the actual key)

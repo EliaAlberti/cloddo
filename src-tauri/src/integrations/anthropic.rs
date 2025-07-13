@@ -77,25 +77,26 @@ impl AnthropicClient {
     }
 
     pub async fn validate_api_key(&self) -> Result<bool> {
-        // First check basic format - Anthropic API keys start with 'sk-ant-'
-        if !self.api_key.starts_with("sk-ant-") {
-            log::error!("Invalid API key format: must start with 'sk-ant-'");
+        // First check basic format - Anthropic API keys start with 'sk-ant-api03-' or 'sk-ant-api04-'
+        if !self.api_key.starts_with("sk-ant-api03-") && !self.api_key.starts_with("sk-ant-api04-") {
+            log::error!("Invalid API key format: must start with 'sk-ant-api03-' or 'sk-ant-api04-'. Current format: {}...", 
+                if self.api_key.len() >= 15 { &self.api_key[..15] } else { &self.api_key });
             return Ok(false);
         }
 
-        // Check minimum length (Anthropic keys are typically longer)
-        if self.api_key.len() < 40 {
-            log::error!("Invalid API key format: too short");
+        // Check minimum length (Anthropic keys are typically ~95+ characters)
+        if self.api_key.len() < 90 {
+            log::error!("Invalid API key format: too short (length: {}, expected ~95+)", self.api_key.len());
             return Ok(false);
         }
 
-        // Test with actual API call
+        // Test with actual API call using a minimal request
         let test_request = AnthropicRequest {
             model: "claude-3-haiku-20240307".to_string(),
             max_tokens: 10,
             messages: vec![AnthropicMessage {
                 role: "user".to_string(),
-                content: "Hi".to_string(),
+                content: "Test".to_string(),
             }],
             temperature: None,
             system: None,
@@ -107,7 +108,20 @@ impl AnthropicClient {
                 Ok(true)
             },
             Err(e) => {
-                log::error!("API key validation failed: {}", e);
+                let error_str = e.to_string();
+                log::error!("API key validation failed: {}", error_str);
+                
+                // Provide more specific error information
+                if error_str.contains("401") || error_str.contains("authentication") {
+                    log::error!("Authentication failed - API key is invalid or expired");
+                } else if error_str.contains("429") {
+                    log::warn!("Rate limit hit during validation - API key might be valid");
+                    // If it's just a rate limit, consider the key potentially valid
+                    return Ok(true);
+                } else if error_str.contains("network") || error_str.contains("connection") {
+                    log::error!("Network error during validation - check internet connection");
+                }
+                
                 Ok(false)
             }
         }
