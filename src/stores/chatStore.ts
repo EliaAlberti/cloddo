@@ -194,6 +194,22 @@ export const useChatStore = create<ChatState>()(
       sendClaudeMessage: async (chatId: string, content: string, apiKey: string) => {
         try {
           set({ isLoading: true, error: null });
+          
+          // First add the user message to the UI
+          const userMessage: Message = {
+            id: `msg_user_${Date.now()}`,
+            chat_id: chatId,
+            role: 'user',
+            content,
+            created_at: new Date().toISOString(),
+            metadata: undefined,
+          };
+          
+          set((state) => ({ 
+            messages: [...state.messages, userMessage] 
+          }));
+          
+          // Then send to Claude API and get response
           const assistantMessage = await invoke('send_claude_message', {
             request: {
               chat_id: chatId,
@@ -202,9 +218,11 @@ export const useChatStore = create<ChatState>()(
             },
           }) as Message;
           
-          // The backend handles saving both user and assistant messages,
-          // so we need to refresh the messages to get both
-          await get().fetchMessages(chatId);
+          // Add the assistant response to the UI
+          set((state) => ({ 
+            messages: [...state.messages, assistantMessage] 
+          }));
+          
           // Clear error on successful message send
           set({ error: null });
           return assistantMessage;
