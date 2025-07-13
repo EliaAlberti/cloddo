@@ -102,10 +102,11 @@ export const useChatStore = create<ChatState>()(
         try {
           set({ isLoading: true, error: null });
           const chat = await invoke('create_chat', { request }) as Chat;
-          set((state) => ({ chats: [chat, ...state.chats] }));
+          set((state) => ({ chats: [chat, ...state.chats], error: null }));
           return chat;
         } catch (error) {
-          set({ error: error as string });
+          const errorMessage = typeof error === 'string' ? error : 'Failed to create chat. Please try again.';
+          set({ error: errorMessage });
           throw error;
         } finally {
           set({ isLoading: false });
@@ -159,7 +160,18 @@ export const useChatStore = create<ChatState>()(
           }) as Message[];
           set({ messages });
         } catch (error) {
-          set({ error: error as string });
+          // Handle Tauri-specific error format
+          let errorMessage = 'Failed to load messages';
+          if (typeof error === 'string') {
+            if (error.includes('missing required key')) {
+              errorMessage = 'Please select a valid chat to view messages.';
+            } else if (error.includes('chatId')) {
+              errorMessage = 'Invalid chat selected. Please try creating a new chat.';
+            } else {
+              errorMessage = error;
+            }
+          }
+          set({ error: errorMessage });
         } finally {
           set({ isLoading: false });
         }
@@ -193,9 +205,12 @@ export const useChatStore = create<ChatState>()(
           // The backend handles saving both user and assistant messages,
           // so we need to refresh the messages to get both
           await get().fetchMessages(chatId);
+          // Clear error on successful message send
+          set({ error: null });
           return assistantMessage;
         } catch (error) {
-          set({ error: error as string });
+          const errorMessage = typeof error === 'string' ? error : 'Failed to send message. Please check your API configuration.';
+          set({ error: errorMessage });
           throw error;
         } finally {
           set({ isLoading: false });

@@ -23,10 +23,19 @@ export const MainContent: React.FC<MainContentProps> = ({ onNewChat }) => {
 
   // Load messages when chat changes
   useEffect(() => {
-    if (currentChat) {
+    if (currentChat && currentChat.id) {
+      // Clear any existing errors when switching chats
+      setError(null);
       fetchMessages(currentChat.id);
     }
-  }, [currentChat, fetchMessages]);
+  }, [currentChat, fetchMessages, setError]);
+
+  // Clear errors when settings change (API key configured)
+  useEffect(() => {
+    if (settings?.api?.anthropicApiKey) {
+      setError(null);
+    }
+  }, [settings?.api?.anthropicApiKey, setError]);
 
   const handleSendMessage = async () => {
     if (!messageInput.trim() || !currentChat || isSending) return;
@@ -151,8 +160,26 @@ export const MainContent: React.FC<MainContentProps> = ({ onNewChat }) => {
       <div className="border-t border-border p-4">
         <div className="max-w-4xl mx-auto">
           {error && (
-            <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
-              {error}
+            <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-destructive" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm text-destructive font-medium">Error</p>
+                  <p className="text-sm text-destructive/80 mt-1">{error}</p>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setError(null)}
+                    className="mt-2 h-auto p-1 text-destructive hover:text-destructive/80"
+                  >
+                    Dismiss
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
           <div className="flex space-x-4">
