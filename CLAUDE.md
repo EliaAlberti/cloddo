@@ -123,6 +123,30 @@ git add . && git commit -m "Description" && git push
 4. **Verify application builds** (`npm run build` should succeed)
 5. **Use memory MCP** to maintain context across sessions
 
+## 🎯 ACCOMPLISHMENT TRACKING PROTOCOL (CRITICAL)
+
+### **MANDATORY: Auto-Documentation Process**
+After ANY major accomplishment (Tier 1/2):
+1. **Immediate Knowledge Capture**: Update KNOWLEDGE_BASE.md with learning
+2. **Documentation Sync**: Update affected .md files 
+3. **Git Commit with Flag**: Use "MAJOR ACCOMPLISHMENT:" prefix
+4. **Learning Extraction**: Document solution patterns for reuse
+
+### **Accomplishment Detection Triggers**
+- ✅ Feature implementation complete
+- ✅ Critical bug resolution 
+- ✅ User validation success
+- ✅ Workflow establishment
+- ✅ Architecture changes
+- ✅ Research completion with actionable results
+
+### **Use TodoWrite Integration**
+- Mark high-priority completions immediately
+- Auto-trigger documentation updates
+- Preserve ALL critical knowledge
+
+**RULE**: NO major progress without corresponding knowledge capture!
+
 **STATUS: PRODUCTION-READY DESKTOP APPLICATION - LOCAL TESTING SUCCESSFUL**
 
-*Next phase: Research-driven development planning using MCP tools*
+*Next phase: Research-driven development planning using MCP tools with auto-documentation*
