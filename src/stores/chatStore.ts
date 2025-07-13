@@ -191,17 +191,17 @@ export const useChatStore = create<ChatState>()(
         }
       },
 
-      sendClaudeMessage: async (chatId: string, content: string, apiKey: string) => {
+      sendClaudeMessage: async (chatId: string, content: string, _apiKey: string) => {
         try {
           set({ isLoading: true, error: null });
           
           // First add the user message to the UI
           const userMessage: Message = {
             id: `msg_user_${Date.now()}`,
-            chat_id: chatId,
+            chatId: chatId,
             role: 'user',
             content,
-            created_at: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
             metadata: undefined,
           };
           

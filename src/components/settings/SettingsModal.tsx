@@ -11,26 +11,22 @@ interface SettingsModalProps {
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
   const { settings, updateSettings } = useSettingsStore();
-  const [authMethod, setAuthMethod] = useState<'api_key' | 'oauth'>('api_key');
+  const [authMethod] = useState<'api_key'>('api_key'); // OAuth disabled
   const [apiKey, setApiKey] = useState('');
-  const [oauthToken, setOauthToken] = useState('');
   const [selectedModel, setSelectedModel] = useState('claude-3-5-sonnet-20241022');
   const [maxTokens, setMaxTokens] = useState(4096);
   const [showApiKey, setShowApiKey] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
-  const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [isValidatingKey, setIsValidatingKey] = useState(false);
   const [keyValidationResult, setKeyValidationResult] = useState<boolean | null>(null);
 
   useEffect(() => {
+    // Always use API key method since OAuth is not supported
+    
     if (settings?.api) {
-      setAuthMethod(settings.api.authMethod || 'api_key');
       if (settings.api.anthropicApiKey) {
         setApiKey(settings.api.anthropicApiKey);
-      }
-      if (settings.api.anthropicOAuthToken) {
-        setOauthToken(settings.api.anthropicOAuthToken);
       }
       if (settings.api.defaultModel) {
         setSelectedModel(settings.api.defaultModel);
@@ -51,43 +47,40 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     setKeyValidationResult(null);
     
     try {
-      // Debug: Check what's actually stored in settings
-      const debugResult = await invoke<string>('debug_settings');
-      console.log('Debug settings result:', debugResult);
+      // First, save the current API key to settings so validation uses the actual stored value
+      const tempApiSettings = {
+        authMethod,
+        defaultModel: selectedModel,
+        requestTimeout: 30,
+        maxRetries: 3,
+        rateLimit: {
+          enabled: false,
+          requestsPerMinute: 60,
+        },
+        anthropicApiKey: apiKey.trim(),
+        // Preserve existing optional values if they exist
+        ...(settings?.api?.anthropicBaseUrl && { anthropicBaseUrl: settings.api.anthropicBaseUrl }),
+        ...(settings?.api?.proxy && { proxy: settings.api.proxy }),
+      };
       
+      const settingsUpdate = { api: tempApiSettings };
+      await updateSettings(settingsUpdate);
+      
+      // Now validate the stored key (this will match what the chat functionality uses)
       const isValid = await invoke<boolean>('validate_api_key', { 
         api_key: apiKey.trim() 
       });
+      
+      console.log('🔑 Validation result:', isValid);
       setKeyValidationResult(isValid);
     } catch (error) {
-      console.error('API key validation error:', error);
+      console.error('❌ API key validation error:', error);
       setKeyValidationResult(false);
     } finally {
       setIsValidatingKey(false);
     }
   };
 
-  const handleOAuthLogin = async () => {
-    setIsAuthenticating(true);
-    try {
-      // Initiate OAuth flow
-      const authUrl = await invoke<string>('initiate_oauth_flow');
-      
-      // Open the OAuth URL in the default browser
-      await invoke('open_url', { url: authUrl });
-      
-      // Note: In a full implementation, you'd handle the callback
-      // For now, we'll show a message to the user
-      alert('OAuth authentication initiated. Please complete the process in your browser and return here.');
-      
-    } catch (error) {
-      console.error('OAuth authentication failed:', error);
-      const errorMessage = typeof error === 'string' ? error : 'OAuth authentication failed. Please try again.';
-      alert(errorMessage);
-    } finally {
-      setIsAuthenticating(false);
-    }
-  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -100,15 +93,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
       // Prepare API settings - preserve existing values and only update what's changed
       const apiSettings = {
-        ...settings?.api,
         authMethod,
         defaultModel: selectedModel,
-        requestTimeout: settings?.api?.requestTimeout || 30,
-        maxRetries: settings?.api?.maxRetries || 3,
-        rateLimit: settings?.api?.rateLimit || {
+        requestTimeout: 30,
+        maxRetries: 3,
+        rateLimit: {
           enabled: false,
           requestsPerMinute: 60,
         },
+        // Preserve existing optional values if they exist
+        ...(settings?.api?.anthropicApiKey && { anthropicApiKey: settings.api.anthropicApiKey }),
+        ...(settings?.api?.anthropicBaseUrl && { anthropicBaseUrl: settings.api.anthropicBaseUrl }),
+        ...(settings?.api?.proxy && { proxy: settings.api.proxy }),
       };
 
       console.log('Base API settings prepared:', apiSettings);
@@ -122,17 +118,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         console.log('❌ API key is empty or whitespace, not saving');
       }
 
-      // Always save OAuth token if it's been entered
-      if (oauthToken.trim()) {
-        apiSettings.anthropicOAuthToken = oauthToken.trim();
-        console.log('✅ OAuth token added to settings');
-      }
 
       console.log('Final API settings before save:', { 
         authMethod: apiSettings.authMethod, 
         hasApiKey: !!apiSettings.anthropicApiKey,
-        apiKeyLength: apiSettings.anthropicApiKey?.length || 0,
-        hasOAuthToken: !!apiSettings.anthropicOAuthToken 
+        apiKeyLength: apiSettings.anthropicApiKey?.length || 0
       });
 
       const settingsUpdate = {
@@ -189,30 +179,34 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                   type="radio" 
                   name="authMethod" 
                   value="api_key" 
-                  checked={authMethod === 'api_key'}
-                  onChange={(e) => setAuthMethod(e.target.value as 'api_key')}
+                  checked={true}
+                  disabled={true}
                   className="text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-gray-700 dark:text-gray-300">API Key</span>
+                <span className="text-gray-700 dark:text-gray-300">API Key (Required)</span>
               </label>
               
-              <label className="flex items-center space-x-2 text-sm">
+              <label className="flex items-center space-x-2 text-sm opacity-50 cursor-not-allowed">
                 <input 
                   type="radio" 
                   name="authMethod" 
                   value="oauth" 
-                  checked={authMethod === 'oauth'}
-                  onChange={(e) => setAuthMethod(e.target.value as 'oauth')}
+                  checked={false}
+                  disabled={true}
                   className="text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-gray-700 dark:text-gray-300">OAuth Credentials (Recommended)</span>
+                <span className="text-gray-500 dark:text-gray-500">OAuth (Not supported for third-party applications)</span>
               </label>
+            </div>
+            <div className="p-3 bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 rounded-md">
+              <p className="text-sm text-blue-800 dark:text-blue-300">
+                💡 Anthropic's Claude API only supports API key authentication for desktop applications. OAuth is reserved for MCP servers and internal tools.
+              </p>
             </div>
           </div>
 
           {/* API Key Section */}
-          {authMethod === 'api_key' && (
-            <div className="space-y-3">
+          <div className="space-y-3">
               <div>
                 <label className="text-sm font-medium text-gray-900 dark:text-white">Claude API Key</label>
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
@@ -305,53 +299,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                 </div>
               )}
             </div>
-          )}
 
-          {/* OAuth Section */}
-          {authMethod === 'oauth' && (
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm font-medium text-gray-900 dark:text-white">OAuth Authentication</label>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  Secure authentication via Anthropic's OAuth system. No API keys needed.
-                </p>
-              </div>
-              
-              {oauthToken ? (
-                <div className="p-3 bg-green-100 dark:bg-green-900/30 border border-green-300 dark:border-green-700 rounded-md">
-                  <p className="text-sm text-green-800 dark:text-green-300 flex items-center">
-                    <Check className="h-4 w-4 mr-2" />
-                    OAuth authentication active
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <Button
-                    onClick={handleOAuthLogin}
-                    disabled={isAuthenticating}
-                    className="w-full"
-                  >
-                    {isAuthenticating ? (
-                      <>
-                        <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-white border-r-transparent" />
-                        Authenticating...
-                      </>
-                    ) : (
-                      <>
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        Connect with Anthropic
-                      </>
-                    )}
-                  </Button>
-                  <div className="p-3 bg-blue-100 dark:bg-blue-900/30 border border-blue-300 dark:border-blue-700 rounded-md">
-                    <p className="text-sm text-blue-800 dark:text-blue-300">
-                      💡 OAuth provides secure access without exposing your API key. You'll be redirected to Anthropic to authorize this application.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Model Selection */}
           <div className="space-y-3">

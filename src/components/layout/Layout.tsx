@@ -29,6 +29,10 @@ export const Layout: React.FC = () => {
 
   const handleNewChat = async () => {
     try {
+      // Clear any existing errors before creating new chat
+      const { setError } = useChatStore.getState();
+      setError(null);
+      
       const newChat = await createChat({
         session_id: 'default-session',
         title: 'New Chat',
@@ -38,6 +42,9 @@ export const Layout: React.FC = () => {
       setCurrentChat(newChat);
     } catch (error) {
       console.error('Failed to create new chat:', error);
+      // Set a user-friendly error message
+      const { setError } = useChatStore.getState();
+      setError('Failed to create new chat. Please check your configuration and try again.');
     }
   };
 

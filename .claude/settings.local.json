@@ -49,7 +49,9 @@
       "Bash(ssh-keygen:*)",
       "Bash(cat:*)",
       "Bash(ssh:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(rg:*)",
+      "Bash(true)"
     ],
     "deny": []
   }

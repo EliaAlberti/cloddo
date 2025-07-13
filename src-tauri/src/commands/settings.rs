@@ -64,6 +64,24 @@ pub async fn validate_api_key(api_key: String) -> Result<bool, String> {
         return Ok(false);
     }
     
+    // Also check what's currently stored for comparison
+    match get_settings().await {
+        Ok(stored_settings) => {
+            if let Some(stored_key) = stored_settings.get("api.anthropicApiKey").and_then(|v| v.as_str()) {
+                log::info!("🔍 Currently stored API key: length={}, starts_with={}", 
+                    stored_key.len(),
+                    if stored_key.len() >= 15 { &stored_key[..15] } else { stored_key }
+                );
+                log::info!("🔍 Keys match? {}", stored_key == api_key);
+            } else {
+                log::info!("🔍 No API key currently stored");
+            }
+        },
+        Err(e) => {
+            log::error!("🔍 Failed to get stored settings: {}", e);
+        }
+    }
+    
     let client = AnthropicClient::new(api_key, None);
     log::info!("🔑 Created AnthropicClient, calling validate_api_key...");
     
