@@ -64,6 +64,7 @@ pub struct Chat {
     pub title: String,
     pub folder_path: Option<String>,
     pub is_favorite: bool,
+    pub last_activity: DateTime<Utc>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
     pub metadata: Option<String>, // JSON string
@@ -228,6 +229,7 @@ impl Chat {
             title,
             folder_path: None,
             is_favorite: false,
+            last_activity: now,
             created_at: now,
             updated_at: now,
             metadata: None,

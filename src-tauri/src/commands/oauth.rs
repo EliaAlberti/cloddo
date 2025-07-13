@@ -24,10 +24,19 @@ const REDIRECT_URI: &str = "http://localhost:8080/oauth/callback";
 
 #[tauri::command]
 pub async fn initiate_oauth_flow() -> Result<String, String> {
-    // For testing purposes, return a demo OAuth URL
-    // In production, this would use real Anthropic OAuth endpoints
-    let demo_url = "https://console.anthropic.com/oauth/authorize?demo=true";
-    Ok(demo_url.to_string())
+    let client_id = get_client_id();
+    let state = format!("state_{}", chrono::Utc::now().timestamp());
+    
+    // Build proper OAuth URL with required parameters
+    let oauth_url = format!(
+        "{}?response_type=code&client_id={}&redirect_uri={}&scope=read&state={}",
+        ANTHROPIC_AUTH_URL,
+        urlencoding::encode(&client_id),
+        urlencoding::encode(REDIRECT_URI),
+        urlencoding::encode(&state)
+    );
+    
+    Ok(oauth_url)
 }
 
 #[tauri::command]
@@ -120,17 +129,21 @@ pub async fn validate_oauth_token(access_token: String) -> Result<bool, String> 
     Ok(response.status().is_success())
 }
 
-// Helper functions (these would be configured via environment variables or secure storage)
+// Helper functions for OAuth configuration
 fn get_client_id() -> String {
-    // In production, this would be loaded from secure configuration
     std::env::var("ANTHROPIC_CLIENT_ID")
-        .unwrap_or_else(|_| "cloddo-desktop-app".to_string())
+        .unwrap_or_else(|_| {
+            log::warn!("ANTHROPIC_CLIENT_ID not set, using placeholder. Set environment variable for real OAuth.");
+            "cloddo-desktop-app".to_string()
+        })
 }
 
 fn get_client_secret() -> String {
-    // In production, this would be loaded from secure configuration
     std::env::var("ANTHROPIC_CLIENT_SECRET")
-        .unwrap_or_else(|_| "dev-secret-placeholder".to_string())
+        .unwrap_or_else(|_| {
+            log::warn!("ANTHROPIC_CLIENT_SECRET not set, using placeholder. Set environment variable for real OAuth.");
+            "dev-secret-placeholder".to_string()
+        })
 }
 
 #[tauri::command]

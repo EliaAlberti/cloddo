@@ -58,6 +58,7 @@ pub fn run() {
       // Settings commands
       settings::get_settings,
       settings::update_settings,
+      settings::validate_api_key,
       
       // Agent commands
       agent::get_agents,

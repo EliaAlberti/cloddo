@@ -1,13 +1,28 @@
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
+use crate::integrations::anthropic::AnthropicClient;
+
+fn get_settings_file_path() -> Result<String, String> {
+    let app_data_dir = dirs::data_dir()
+        .unwrap_or_else(|| std::env::temp_dir())
+        .join("cloddo");
+    
+    // Create directory if it doesn't exist
+    if !app_data_dir.exists() {
+        std::fs::create_dir_all(&app_data_dir)
+            .map_err(|e| format!("Failed to create app data directory: {}", e))?;
+    }
+    
+    Ok(app_data_dir.join("settings.json").to_string_lossy().to_string())
+}
 
 #[tauri::command]
 pub async fn get_settings() -> Result<HashMap<String, serde_json::Value>, String> {
-    let settings_path = "/tmp/cloddo_settings.json";
+    let settings_path = get_settings_file_path()?;
     
-    if Path::new(settings_path).exists() {
-        let content = fs::read_to_string(settings_path)
+    if Path::new(&settings_path).exists() {
+        let content = fs::read_to_string(&settings_path)
             .map_err(|e| format!("Failed to read settings: {}", e))?;
         
         let settings: HashMap<String, serde_json::Value> = serde_json::from_str(&content)
@@ -28,13 +43,29 @@ pub async fn get_settings() -> Result<HashMap<String, serde_json::Value>, String
 pub async fn update_settings(
     settings: HashMap<String, serde_json::Value>,
 ) -> Result<bool, String> {
-    let settings_path = "/tmp/cloddo_settings.json";
+    let settings_path = get_settings_file_path()?;
     
     let json_content = serde_json::to_string_pretty(&settings)
         .map_err(|e| format!("Failed to serialize settings: {}", e))?;
     
-    fs::write(settings_path, json_content)
+    fs::write(&settings_path, json_content)
         .map_err(|e| format!("Failed to write settings: {}", e))?;
     
     Ok(true)
+}
+
+#[tauri::command]
+pub async fn validate_api_key(api_key: String) -> Result<bool, String> {
+    if api_key.is_empty() {
+        return Ok(false);
+    }
+    
+    let client = AnthropicClient::new(api_key, None);
+    match client.validate_api_key().await {
+        Ok(is_valid) => Ok(is_valid),
+        Err(e) => {
+            log::error!("API key validation error: {}", e);
+            Ok(false)
+        }
+    }
 }
