@@ -93,6 +93,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     setIsSaving(true);
     setSaveSuccess(false);
     try {
+      console.log('=== SAVE DEBUG START ===');
+      console.log('Current apiKey state:', { length: apiKey.length, value: apiKey });
+      console.log('Current authMethod:', authMethod);
+      console.log('Current settings.api:', settings?.api);
+
       // Prepare API settings - preserve existing values and only update what's changed
       const apiSettings = {
         ...settings?.api,
@@ -106,27 +111,36 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         },
       };
 
+      console.log('Base API settings prepared:', apiSettings);
+
       // Always save the API key if it's been entered (regardless of auth method)
       if (apiKey.trim()) {
         apiSettings.anthropicApiKey = apiKey.trim();
-        console.log('Saving API key, length:', apiKey.trim().length);
+        console.log('✅ API key added to settings, length:', apiKey.trim().length);
+        console.log('First 15 chars:', apiKey.trim().substring(0, 15));
+      } else {
+        console.log('❌ API key is empty or whitespace, not saving');
       }
 
       // Always save OAuth token if it's been entered
       if (oauthToken.trim()) {
         apiSettings.anthropicOAuthToken = oauthToken.trim();
-        console.log('Saving OAuth token');
+        console.log('✅ OAuth token added to settings');
       }
 
-      console.log('Saving API settings:', { 
-        authMethod, 
+      console.log('Final API settings before save:', { 
+        authMethod: apiSettings.authMethod, 
         hasApiKey: !!apiSettings.anthropicApiKey,
+        apiKeyLength: apiSettings.anthropicApiKey?.length || 0,
         hasOAuthToken: !!apiSettings.anthropicOAuthToken 
       });
 
-      await updateSettings({
+      const settingsUpdate = {
         api: apiSettings,
-      });
+      };
+      console.log('About to call updateSettings with:', settingsUpdate);
+
+      await updateSettings(settingsUpdate);
       setSaveSuccess(true);
       // Auto-close after a brief success message
       setTimeout(() => {
