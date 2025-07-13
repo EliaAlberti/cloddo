@@ -151,6 +151,12 @@ async fn get_api_key_from_settings() -> Result<String, String> {
         return Err("API key is empty. Please configure your Anthropic API key in settings.".to_string());
     }
     
+    // Log API key format for debugging (but not the actual key)
+    log::info!("API key found. Length: {}, starts with: {}", 
+        api_key.len(), 
+        if api_key.len() >= 8 { &api_key[..8] } else { "too short" }
+    );
+    
     Ok(api_key.to_string())
 }
 
@@ -194,14 +200,27 @@ pub async fn send_claude_message(request: CreateMessageRequest) -> Result<Messag
             Ok(assistant_message)
         },
         Err(e) => {
-            // Fallback to informative error message
+            // Log detailed error for debugging
+            log::error!("Claude API request failed: {}", e);
+            
+            // Provide specific error messages based on error type
+            let error_content = if e.to_string().contains("401") || e.to_string().contains("authentication") {
+                "Authentication failed. Please check your Anthropic API key in settings and ensure it's valid.".to_string()
+            } else if e.to_string().contains("429") {
+                "Rate limit exceeded. Please wait a moment and try again.".to_string()
+            } else if e.to_string().contains("network") || e.to_string().contains("connection") {
+                "Network connection error. Please check your internet connection and try again.".to_string()
+            } else {
+                format!("API request failed: {}. Please check your API key configuration in settings.", e)
+            };
+            
             let error_message = Message {
                 id: format!("msg_{}", Utc::now().timestamp()),
                 chat_id: request.chat_id,
                 role: "assistant".to_string(),
-                content: format!("I'm unable to process your request right now. Error: {}. Please check your API key configuration in settings.", e),
+                content: error_content,
                 created_at: Utc::now(),
-                metadata: Some(r#"{"error": true}"#.to_string()),
+                metadata: Some(format!(r#"{{"error": true, "error_details": "{}"}}"#, e)),
             };
             
             Ok(error_message)

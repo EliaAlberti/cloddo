@@ -77,7 +77,19 @@ impl AnthropicClient {
     }
 
     pub async fn validate_api_key(&self) -> Result<bool> {
-        // Simple validation by making a minimal request
+        // First check basic format - Anthropic API keys start with 'sk-ant-'
+        if !self.api_key.starts_with("sk-ant-") {
+            log::error!("Invalid API key format: must start with 'sk-ant-'");
+            return Ok(false);
+        }
+
+        // Check minimum length (Anthropic keys are typically longer)
+        if self.api_key.len() < 40 {
+            log::error!("Invalid API key format: too short");
+            return Ok(false);
+        }
+
+        // Test with actual API call
         let test_request = AnthropicRequest {
             model: "claude-3-haiku-20240307".to_string(),
             max_tokens: 10,
@@ -90,8 +102,14 @@ impl AnthropicClient {
         };
 
         match self.send_message(test_request).await {
-            Ok(_) => Ok(true),
-            Err(_) => Ok(false),
+            Ok(_) => {
+                log::info!("API key validation successful");
+                Ok(true)
+            },
+            Err(e) => {
+                log::error!("API key validation failed: {}", e);
+                Ok(false)
+            }
         }
     }
 }

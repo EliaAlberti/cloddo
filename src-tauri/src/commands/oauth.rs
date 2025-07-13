@@ -133,8 +133,10 @@ pub async fn validate_oauth_token(access_token: String) -> Result<bool, String> 
 fn get_client_id() -> String {
     std::env::var("ANTHROPIC_CLIENT_ID")
         .unwrap_or_else(|_| {
-            log::warn!("ANTHROPIC_CLIENT_ID not set, using placeholder. Set environment variable for real OAuth.");
-            "cloddo-desktop-app".to_string()
+            log::warn!("ANTHROPIC_CLIENT_ID not set, using placeholder UUID. Set environment variable for real OAuth.");
+            // Generate a valid UUID format for OAuth
+            use uuid::Uuid;
+            format!("urn:uuid:{}", Uuid::new_v4())
         })
 }
 
