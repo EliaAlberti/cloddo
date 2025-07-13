@@ -33,6 +33,7 @@ Thumbs.db
 # Testing artifacts (old VPS approach)
 /tmp/cloddo_*.json
 *.png
+!src-tauri/icons/*.png
 *.log
 
 # Temporary files
