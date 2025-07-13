@@ -43,11 +43,11 @@ fn save_chats(chats: &Vec<Chat>) -> Result<(), String> {
 
 #[tauri::command]
 pub async fn get_chats(
-    session_id: Option<String>,
-    project_id: Option<String>,
-    folder_path: Option<String>,
-    limit: Option<i32>,
-    offset: Option<i32>,
+    _session_id: Option<String>,
+    _project_id: Option<String>,
+    _folder_path: Option<String>,
+    _limit: Option<i32>,
+    _offset: Option<i32>,
 ) -> Result<Vec<Chat>, String> {
     let chats = load_chats()?;
     Ok(chats)
@@ -134,8 +134,8 @@ pub async fn delete_chat(chat_id: String) -> Result<bool, String> {
 #[tauri::command]
 pub async fn get_messages(
     chat_id: String,
-    limit: Option<i32>,
-    offset: Option<i32>,
+    _limit: Option<i32>,
+    _offset: Option<i32>,
 ) -> Result<Vec<Message>, String> {
     // Validate chat_id parameter
     if chat_id.is_empty() {
@@ -162,22 +162,18 @@ async fn get_api_key_from_settings() -> Result<String, String> {
     log::info!("All stored settings: {:?}", settings);
     log::info!("Looking for api.anthropicApiKey in settings...");
     
-    // Try to get the API key from settings with fallback to environment variable
-    let api_key = settings.get("api.anthropicApiKey")
-        .and_then(|v| {
-            log::info!("Found api.anthropicApiKey value: {:?}", v);
-            v.as_str()
-        })
-        .filter(|s| !s.is_empty())
-        .or_else(|| {
-            log::info!("Checking ANTHROPIC_API_KEY environment variable...");
-            std::env::var("ANTHROPIC_API_KEY").ok().as_deref()
-        })
-        .ok_or_else(|| {
+    // Try to get the API key from settings first
+    let api_key = if let Some(key) = settings.get("api.anthropicApiKey").and_then(|v| v.as_str()).filter(|s| !s.is_empty()) {
+        log::info!("Found api.anthropicApiKey in settings");
+        key.to_string()
+    } else {
+        log::info!("API key not found in settings, checking ANTHROPIC_API_KEY environment variable...");
+        std::env::var("ANTHROPIC_API_KEY").map_err(|_| {
             log::error!("API key not found in settings or environment. Available settings keys: {:?}", 
                 settings.keys().collect::<Vec<_>>());
             "API key not found. Please ensure you have saved a valid Anthropic API key in Settings > API Configuration.".to_string()
-        })?;
+        })?
+    };
     
     if api_key.is_empty() {
         return Err("API key is empty. Please configure your Anthropic API key in settings first.".to_string());
