@@ -20,6 +20,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isValidatingKey, setIsValidatingKey] = useState(false);
+  const [keyValidationResult, setKeyValidationResult] = useState<boolean | null>(null);
 
   useEffect(() => {
     if (settings?.api) {
@@ -36,7 +38,34 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     }
     // Reset save success when modal opens
     setSaveSuccess(false);
+    setKeyValidationResult(null);
   }, [settings, isOpen]);
+
+  const handleValidateApiKey = async () => {
+    if (!apiKey.trim()) {
+      setKeyValidationResult(false);
+      return;
+    }
+
+    setIsValidatingKey(true);
+    setKeyValidationResult(null);
+    
+    try {
+      // Debug: Check what's actually stored in settings
+      const debugResult = await invoke<string>('debug_settings');
+      console.log('Debug settings result:', debugResult);
+      
+      const isValid = await invoke<boolean>('validate_api_key', { 
+        api_key: apiKey.trim() 
+      });
+      setKeyValidationResult(isValid);
+    } catch (error) {
+      console.error('API key validation error:', error);
+      setKeyValidationResult(false);
+    } finally {
+      setIsValidatingKey(false);
+    }
+  };
 
   const handleOAuthLogin = async () => {
     setIsAuthenticating(true);
@@ -53,7 +82,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
       
     } catch (error) {
       console.error('OAuth authentication failed:', error);
-      alert('OAuth authentication failed. Please try again.');
+      const errorMessage = typeof error === 'string' ? error : 'OAuth authentication failed. Please try again.';
+      alert(errorMessage);
     } finally {
       setIsAuthenticating(false);
     }
@@ -63,20 +93,37 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     setIsSaving(true);
     setSaveSuccess(false);
     try {
-      await updateSettings({
-        api: {
-          authMethod,
-          anthropicApiKey: authMethod === 'api_key' ? apiKey.trim() : undefined,
-          anthropicOAuthToken: authMethod === 'oauth' ? oauthToken.trim() : undefined,
-          defaultModel: selectedModel,
-          requestTimeout: settings?.api?.requestTimeout || 30,
-          maxRetries: settings?.api?.maxRetries || 3,
-          rateLimit: settings?.api?.rateLimit || {
-            enabled: false,
-            requestsPerMinute: 60,
-          },
-          ...settings?.api,
+      // Prepare API settings - preserve existing values and only update what's changed
+      const apiSettings = {
+        ...settings?.api,
+        authMethod,
+        defaultModel: selectedModel,
+        requestTimeout: settings?.api?.requestTimeout || 30,
+        maxRetries: settings?.api?.maxRetries || 3,
+        rateLimit: settings?.api?.rateLimit || {
+          enabled: false,
+          requestsPerMinute: 60,
         },
+      };
+
+      // Only update the API key if it's been entered and we're using API key auth
+      if (authMethod === 'api_key' && apiKey.trim()) {
+        apiSettings.anthropicApiKey = apiKey.trim();
+      }
+
+      // Only update OAuth token if we're using OAuth auth
+      if (authMethod === 'oauth' && oauthToken.trim()) {
+        apiSettings.anthropicOAuthToken = oauthToken.trim();
+      }
+
+      console.log('Saving API settings:', { 
+        authMethod, 
+        hasApiKey: !!apiSettings.anthropicApiKey,
+        hasOAuthToken: !!apiSettings.anthropicOAuthToken 
+      });
+
+      await updateSettings({
+        api: apiSettings,
       });
       setSaveSuccess(true);
       // Auto-close after a brief success message
@@ -166,27 +213,72 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
                 </p>
               </div>
               
-              <div className="relative">
-                <input
-                  type={showApiKey ? 'text' : 'password'}
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="sk-ant-api03-..."
-                  className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-1 top-1 h-6 w-6 p-0"
-                  onClick={() => setShowApiKey(!showApiKey)}
-                >
-                  {showApiKey ? (
-                    <EyeOff className="h-3 w-3" />
-                  ) : (
-                    <Eye className="h-3 w-3" />
-                  )}
-                </Button>
+              <div className="space-y-3">
+                <div className="relative">
+                  <input
+                    type={showApiKey ? 'text' : 'password'}
+                    value={apiKey}
+                    onChange={(e) => {
+                      setApiKey(e.target.value);
+                      setKeyValidationResult(null); // Reset validation when key changes
+                    }}
+                    placeholder="sk-ant-api03-..."
+                    className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-1 top-1 h-6 w-6 p-0"
+                    onClick={() => setShowApiKey(!showApiKey)}
+                  >
+                    {showApiKey ? (
+                      <EyeOff className="h-3 w-3" />
+                    ) : (
+                      <Eye className="h-3 w-3" />
+                    )}
+                  </Button>
+                </div>
+                
+                {apiKey && (
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={handleValidateApiKey}
+                      disabled={isValidatingKey || !apiKey.trim()}
+                      className="text-xs"
+                    >
+                      {isValidatingKey ? (
+                        <>
+                          <div className="h-3 w-3 mr-1 animate-spin rounded-full border border-gray-300 border-r-transparent" />
+                          Validating...
+                        </>
+                      ) : (
+                        'Validate Key'
+                      )}
+                    </Button>
+                    
+                    {keyValidationResult !== null && (
+                      <div className={`text-xs flex items-center ${
+                        keyValidationResult ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                      }`}>
+                        {keyValidationResult ? (
+                          <>
+                            <Check className="h-3 w-3 mr-1" />
+                            Valid
+                          </>
+                        ) : (
+                          <>
+                            <X className="h-3 w-3 mr-1" />
+                            Invalid
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {!apiKey && (
