@@ -65,17 +65,14 @@ export interface ChatFilters {
 }
 
 export interface CreateChatRequest {
-  sessionId: string;
-  projectId?: string;
+  session_id: string;
+  project_id?: string;
   title: string;
-  folderPath?: string;
-  tags?: string[];
-  metadata?: Record<string, any>;
+  folder_path?: string;
 }
 
 export interface CreateMessageRequest {
-  chatId: string;
-  role: 'user' | 'assistant' | 'system';
+  chat_id: string;
+  role: string;
   content: string;
-  metadata?: Record<string, any>;
 }

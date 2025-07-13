@@ -75,9 +75,9 @@ export const useChatStore = create<ChatState>()(
         try {
           set({ isLoading: true, error: null });
           const chats = await invoke('get_chats', {
-            sessionId,
-            projectId,
-            folderPath: get().selectedFolder,
+            session_id: sessionId,
+            project_id: projectId,
+            folder_path: get().selectedFolder,
             limit: 100,
           }) as Chat[];
           set({ chats });
@@ -90,7 +90,7 @@ export const useChatStore = create<ChatState>()(
 
       fetchChatById: async (chatId: string) => {
         try {
-          const chat = await invoke('get_chat_by_id', { chatId }) as Chat | null;
+          const chat = await invoke('get_chat_by_id', { chat_id: chatId }) as Chat | null;
           return chat;
         } catch (error) {
           set({ error: error as string });
@@ -115,7 +115,7 @@ export const useChatStore = create<ChatState>()(
       updateChat: async (chatId: string, updates: Partial<Chat>) => {
         try {
           set({ isLoading: true, error: null });
-          const chat = await invoke('update_chat', { chatId, request: updates }) as Chat;
+          const chat = await invoke('update_chat', { chat_id: chatId, request: updates }) as Chat;
           set((state) => ({
             chats: state.chats.map((c) => (c.id === chatId ? chat : c)),
             currentChat: state.currentChat?.id === chatId ? chat : state.currentChat,
@@ -132,7 +132,7 @@ export const useChatStore = create<ChatState>()(
       deleteChat: async (chatId: string) => {
         try {
           set({ isLoading: true, error: null });
-          const success = await invoke('delete_chat', { chatId }) as boolean;
+          const success = await invoke('delete_chat', { chat_id: chatId }) as boolean;
           if (success) {
             set((state) => ({
               chats: state.chats.filter((c) => c.id !== chatId),
@@ -153,7 +153,7 @@ export const useChatStore = create<ChatState>()(
         try {
           set({ isLoading: true, error: null });
           const messages = await invoke('get_messages', {
-            chatId,
+            chat_id: chatId,
             limit,
             offset,
           }) as Message[];
@@ -185,8 +185,8 @@ export const useChatStore = create<ChatState>()(
           const assistantMessage = await invoke('send_claude_message', {
             request: {
               chat_id: chatId,
+              role: 'user',
               content,
-              api_key: apiKey,
             },
           }) as Message;
           

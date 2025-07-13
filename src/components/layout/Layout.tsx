@@ -30,11 +30,9 @@ export const Layout: React.FC = () => {
   const handleNewChat = async () => {
     try {
       const newChat = await createChat({
-        sessionId: 'default-session',
+        session_id: 'default-session',
         title: 'New Chat',
-        folderPath: undefined,
-        tags: [],
-        metadata: {},
+        folder_path: undefined,
       });
       // Automatically select the newly created chat
       setCurrentChat(newChat);
